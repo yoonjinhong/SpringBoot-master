@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.springboot.api.mapper.menu.MenuMapper">
+
+	<!-- 메뉴의 계층 구조 표현을 위한 resultMap -->
+	<resultMap id="menuMap" type="com.example.springboot.model.vo.menu.MenuVO">
+		<id column="L_ID" property="id" javaType="long"/>
+		<result column="L_PARENT_ID" property="parentId" javaType="long"/>
+		<result column="L_MENU_NAME" property="menuName" javaType="string"/>
+		<result column="L_SEQ" property="seq" javaType="int"/>
+		<result column="L_USE_YN" property="useYn" javaType="string"/>
+		<collection property="children" ofType="com.example.springboot.model.vo.menu.MenuVO">
+			<id column="M_ID" property="id" javaType="long"/>
+			<result column="M_PARENT_ID" property="parentId" javaType="long"/>
+			<result column="M_MENU_NAME" property="menuName" javaType="string"/>
+			<result column="M_SEQ" property="seq" javaType="int"/>
+			<result column="M_USE_YN" property="useYn" javaType="string"/>
+			<collection property="children" ofType="com.example.springboot.model.vo.menu.MenuVO">
+				<id column="S_ID" property="id" javaType="long"/>
+				<result column="S_PARENT_ID" property="parentId" javaType="long"/>
+				<result column="S_MENU_NAME" property="menuName" javaType="string"/>
+				<result column="S_SEQ" property="seq" javaType="int"/>
+				<result column="S_USE_YN" property="useYn" javaType="string"/>
+			</collection>
+		</collection>
+	</resultMap>
+
+	<select id="findAll" resultMap="menuMap">
+		SELECT  L.ID AS L_ID
+				, L.PARENT_ID AS L_PARENT_ID
+				, L.MENU_NAME AS L_MENU_NAME
+				, L.SEQ AS L_SEQ
+				, L.USE_YN AS L_USE_YN
+				, M.ID AS M_ID
+				, M.PARENT_ID AS M_PARENT_ID
+				, M.MENU_NAME AS M_MENU_NAME
+				, M.SEQ AS M_SEQ
+				, M.USE_YN AS M_USE_YN
+				, S.ID AS S_ID
+				, S.PARENT_ID AS S_PARENT_ID
+				, S.MENU_NAME AS S_MENU_NAME
+				, S.SEQ AS S_SEQ
+				, S.USE_YN AS S_USE_YN
+		FROM    TB_MENU L
+		LEFT OUTER JOIN
+				TB_MENU M ON L.ID = M.PARENT_ID
+		LEFT OUTER JOIN
+				TB_MENU S ON M.ID = S.PARENT_ID
+		WHERE   L.PARENT_ID IS NULL
+		AND		L.USE_YN = 'Y'
+		AND		(M.USE_YN = 'Y' OR M.USE_YN IS NULL)
+		AND		(S.USE_YN = 'Y' OR S.USE_YN IS NULL)
+		ORDER BY
+				L_SEQ, M_SEQ, S_SEQ
+	</select>
+
+	<select id="findOneById" parameterType="long" resultType="menuVO">
+		SELECT	ID
+				, PARENT_ID
+				, MENU_NAME
+				, SEQ
+				, USE_YN
+				, REG_DATE
+				, REG_ID
+				, MOD_DATE
+				, MOD_ID
+		FROM	TB_MENU
+		WHERE	ID = #{id}
+	</select>
+
+	<delete id="removeAll">
+		DELETE
+		FROM	TB_MENU
+	</delete>
+
+	<delete id="removeById" parameterType="long">
+		DELETE
+		FROM	TB_MENU
+		WHERE	ID = #{id}
+	</delete>
+
+	<delete id="removeByParentId" parameterType="long">
+		DELETE
+		FROM	TB_MENU
+		WHERE	PARENT_ID = #{parentId}
+	</delete>
+
+	<insert id="save" parameterType="menuVO" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+		INSERT INTO TB_MENU
+		(
+			PARENT_ID
+			, MENU_NAME
+			, SEQ
+			, USE_YN
+			, REG_DATE
+			, REG_ID
+			, MOD_DATE
+			, MOD_ID
+		)
+		VALUES
+		(
+			#{parentId}
+			, #{menuName}
+			, #{seq}
+			, #{useYn}
+			, NOW()
+			, 'SYSTEM'
+			, NOW()
+			, 'SYSTEM'
+		)
+	</insert>
+
+	<insert id="saveAll" parameterType="list">
+		INSERT INTO TB_MENU
+		(
+			PARENT_ID
+			, MENU_NAME
+			, SEQ
+			, USE_YN
+			, REG_DATE
+			, REG_ID
+			, MOD_DATE
+			, MOD_ID
+		)
+		VALUES
+		<foreach collection="list" item="vo" separator=",">
+		(
+			#{vo.parentId}
+			, #{vo.menuName}
+			, #{seq}
+			, #{vo.useYn}
+			, NOW()
+			, 'SYSTEM'
+			, NOW()
+			, 'SYSTEM'
+		)
+		</foreach>
+	</insert>
+
+</mapper>
+
